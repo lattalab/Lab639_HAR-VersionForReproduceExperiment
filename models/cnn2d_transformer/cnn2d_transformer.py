@@ -117,4 +117,5 @@ class CNN2D_Transformer(nn.Module):
         action_tokens = action_tokens.view(B * V, -1, action_tokens.shape[-1])
 
         out = self.mlp_head(fused)
-        return out, pred_views, fused, action_tokens, view_tokens
+        # [TESTED] added features_action to return
+        return out, pred_views, fused, action_tokens, view_tokens, features_action

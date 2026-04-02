@@ -100,6 +100,9 @@ class Lab639Trainer():
         self.action_criterion = torch.nn.CrossEntropyLoss()
         self.view_criterion = torch.nn.CrossEntropyLoss()
 
+        # [TESTED]
+        self.tripletLoss = torch.nn.TripletMarginLoss()
+
 
         if config.mode == 'train':
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.config.learning_rate,
@@ -134,20 +137,37 @@ class Lab639Trainer():
                 same_action_video = same_action_video.cuda()
 
                 # Forward pass
-                x_cls, pred_views, x_rgb, action_token, view_token = self.model(video, is_training=True)
+                x_cls, pred_views, x_rgb, action_token, view_token, v_feat = self.model(video, is_training=True)
 
                 with torch.no_grad():
                     # diff action features
-                    diff_x_cls, _, diff_action_rgb, diff_action_token, diff_view_token = self.model(diff_action_video, is_training=True)
+                    diff_x_cls, _, diff_action_rgb, diff_action_token, diff_view_token, diff_v_feat = self.model(diff_action_video, is_training=True)
 
                     # same action features
-                    same_x_cls, _, same_action_rgb, same_action_token, same_view_token = self.model(same_action_video, is_training=True)
+                    same_x_cls, _, same_action_rgb, same_action_token, same_view_token, same_v_feat = self.model(same_action_video, is_training=True)
 
                 # Compute loss
                 action_loss = self.action_criterion(x_cls, action_label)
                 view_loss = self.view_criterion(pred_views.view(-1, self.config.num_views), view_labels.view(-1))
 
-                sa_rgb_loss = weighted_contrastive_loss(x_rgb, same_action_rgb, diff_action_rgb, action_label, same_x_cls, diff_x_cls)
+                # [TESTED] modify to triplet loss
+
+                # === Triplet Loss (SA-DV & DA-SV) ===
+                B, V, D = v_feat.shape
+                anchors, positives, negatives = [], [], []
+                
+                for v in range(V):
+                    anchors.append(v_feat[:, v, :])           # Anchor: target_video, view v
+                    negatives.append(diff_v_feat[:, v, :])    # DA-SV: diff_video, view v
+                    v_diff = (v + 1) % V 
+                    positives.append(same_v_feat[:, v_diff, :]) # SA-DV: same_video, view v_diff
+                
+                # Stack all views into batch dimension
+                anchors = torch.cat(anchors, dim=0)
+                positives = torch.cat(positives, dim=0)
+                negatives = torch.cat(negatives, dim=0)
+                # sa_rgb_loss = weighted_contrastive_loss(x_rgb, same_action_rgb, diff_action_rgb, action_label, same_x_cls, diff_x_cls)
+                sa_rgb_loss = self.tripletLoss(anchors, positives, negatives)
 
                 subqloss = 0 
                 actqloss = 0    
@@ -160,15 +180,17 @@ class Lab639Trainer():
                     dist = abs(cosine_pairwise_dist(actq, actq))
                     actqloss += torch.sum(dist - torch.eye(actq.shape[0]).cuda())
 
-                
-                if epoch < 25:
-                    cl_lambda = 0
-                else :
-                    cl_lambda = 1
-                # cl_lambda = 1
-                cl_lambda = get_contrastive_lambda(epoch + 1, warmup_epochs = 0, max_epoch = 30)
-                loss = action_loss + view_loss + subqloss + actqloss + cl_lambda * (sa_rgb_loss)
-                # loss = loss / accum_step
+                # [TEST] : Modify loss
+                # if epoch < 25:
+                #     cl_lambda = 0
+                # else :
+                #     cl_lambda = 1
+                # # cl_lambda = 1
+                # cl_lambda = get_contrastive_lambda(epoch + 1, warmup_epochs = 0, max_epoch = 30)
+                # loss = action_loss + view_loss + subqloss + actqloss + cl_lambda * (sa_rgb_loss)
+                # # loss = loss / accum_step
+                # loss.backward()
+                loss = action_loss + view_loss + subqloss + actqloss + sa_rgb_loss
                 loss.backward()
 
                 # if (i + 1) % accum_step == 0:
@@ -269,7 +291,8 @@ class Lab639Trainer():
                 view_labels = view_labels.cuda()
 
                 # Forward pass
-                x_cls, pred_views, x_rgb, _, _ = model(video, is_training=False)
+                # [TEST] add extra return value
+                x_cls, pred_views, x_rgb, _, _, _ = model(video, is_training=False)
 
                 # Compute loss
                 action_loss = self.action_criterion(x_cls, action_label)
@@ -324,7 +347,8 @@ class Lab639Trainer():
                 view_labels = view_labels.cuda()
 
                 # Forward pass
-                x_cls, pred_views, x_rgb, _, _ = self.model(video, is_training=False)
+                # [TEST] add extra return value
+                x_cls, pred_views, x_rgb, _, _, _ = self.model(video, is_training=False)
 
                 # Compute loss
                 action_loss = self.action_criterion(x_cls, action_label)
