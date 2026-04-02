@@ -7,3 +7,19 @@ Why fork repo?
 ## EXP 1: reproduce results for `weighted contrastive loss`
 I have been fixed the bug - `AttributeError: 'GraphModule' object has no attribute 'eval_graph'`.
 - You need to modify `models/v3_model/baseline.py`
+
+## EXP 2: reproduce results for `TripletMarginLoss` (similar to [DVANET](https://github.com/NyleSiddiqui/MultiView_Actions))
+### Method 1
+- see branch `TripletLoss`
+
+Compared to [EXP 1](#exp-1-reproduce-results-for-weighted-contrastive-loss), just change `weighted CL` to `Triplet Margin Loss`.
+### Method 2
+- see branch `SA-DV_TripletMarginLoss`  
+
+To implement `Same Action, Different View triplet margin loss`, it needs some modfications.  
+1. add `action_features` (not fused features) as one of model return values.
+2. To accomplish triplet loss, we need to find anchor, positive, negative.
+    - positive: same action feature but different view 
+    - negative: different action but same view
+    - You can find another forwarding feature to get `same action` or `different action`.
+    - To select view, we need to manipulate the `view dimension`.
