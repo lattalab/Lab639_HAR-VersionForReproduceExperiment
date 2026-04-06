@@ -100,6 +100,8 @@ class Lab639Trainer():
         self.action_criterion = torch.nn.CrossEntropyLoss()
         self.view_criterion = torch.nn.CrossEntropyLoss()
 
+        # [TESTED] add tipelet loss
+        self.triplet_criterion = torch.nn.TripletMarginLoss()
 
         if config.mode == 'train':
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.config.learning_rate,
@@ -147,7 +149,9 @@ class Lab639Trainer():
                 action_loss = self.action_criterion(x_cls, action_label)
                 view_loss = self.view_criterion(pred_views.view(-1, self.config.num_views), view_labels.view(-1))
 
-                sa_rgb_loss = weighted_contrastive_loss(x_rgb, same_action_rgb, diff_action_rgb, action_label, same_x_cls, diff_x_cls)
+                # sa_rgb_loss = weighted_contrastive_loss(x_rgb, same_action_rgb, diff_action_rgb, action_label, same_x_cls, diff_x_cls)
+                # [Modified] change `weighted constrative loss` to `triplet loss`
+                sa_rgb_loss = self.triplet_criterion(x_rgb, same_action_rgb, diff_action_rgb)
 
                 subqloss = 0 
                 actqloss = 0    
@@ -161,14 +165,18 @@ class Lab639Trainer():
                     actqloss += torch.sum(dist - torch.eye(actq.shape[0]).cuda())
 
                 
-                if epoch < 25:
-                    cl_lambda = 0
-                else :
-                    cl_lambda = 1
-                # cl_lambda = 1
-                cl_lambda = get_contrastive_lambda(epoch + 1, warmup_epochs = 0, max_epoch = 30)
-                loss = action_loss + view_loss + subqloss + actqloss + cl_lambda * (sa_rgb_loss)
-                # loss = loss / accum_step
+                # if epoch < 25:
+                #     cl_lambda = 0
+                # else :
+                #     cl_lambda = 1
+                # # cl_lambda = 1
+                # cl_lambda = get_contrastive_lambda(epoch + 1, warmup_epochs = 0, max_epoch = 30)
+                # loss = action_loss + view_loss + subqloss + actqloss + cl_lambda * (sa_rgb_loss)
+                # # loss = loss / accum_step
+                # loss.backward()
+
+                # [Modified] change `weighted constrative loss` to `triplet loss`
+                loss = action_loss + view_loss + subqloss + actqloss + sa_rgb_loss
                 loss.backward()
 
                 # if (i + 1) % accum_step == 0:
