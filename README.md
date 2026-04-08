@@ -23,3 +23,8 @@ To implement `Same Action, Different View triplet margin loss`, it needs some mo
     - negative: different action but same view
     - You can find another forwarding feature to get `same action` or `different action`.
     - To select view, we need to manipulate the `view dimension`.
+
+## EXP 3: reproduce results for `remove either weighted_CL or triplet loss`
+- see branch `Remove_CL`
+
+Add document `#` for all related lines in code segments.

@@ -31,6 +31,7 @@ MANIFEST
 # [ADDED For Myself]
 result/*
 processed_data_S009_820_616/*
+processed_data_S009_820_616
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

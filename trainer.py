@@ -120,7 +120,7 @@ class Lab639Trainer():
             view_acc_list = []
             action_losses = []
             view_losses = []
-            sa_rgb_losses = []
+            # sa_rgb_losses = []
             action_cl_losses = []
             view_cl_losses = []
             ortho_sub_losses = []
@@ -147,7 +147,8 @@ class Lab639Trainer():
                 action_loss = self.action_criterion(x_cls, action_label)
                 view_loss = self.view_criterion(pred_views.view(-1, self.config.num_views), view_labels.view(-1))
 
-                sa_rgb_loss = weighted_contrastive_loss(x_rgb, same_action_rgb, diff_action_rgb, action_label, same_x_cls, diff_x_cls)
+                # [TESTED] ablation study: try to remove `weighted constrative loss`
+                # sa_rgb_loss = weighted_contrastive_loss(x_rgb, same_action_rgb, diff_action_rgb, action_label, same_x_cls, diff_x_cls)
 
                 subqloss = 0 
                 actqloss = 0    
@@ -161,14 +162,18 @@ class Lab639Trainer():
                     actqloss += torch.sum(dist - torch.eye(actq.shape[0]).cuda())
 
                 
-                if epoch < 25:
-                    cl_lambda = 0
-                else :
-                    cl_lambda = 1
-                # cl_lambda = 1
-                cl_lambda = get_contrastive_lambda(epoch + 1, warmup_epochs = 0, max_epoch = 30)
-                loss = action_loss + view_loss + subqloss + actqloss + cl_lambda * (sa_rgb_loss)
-                # loss = loss / accum_step
+                # if epoch < 25:
+                #     cl_lambda = 0
+                # else :
+                #     cl_lambda = 1
+                # # cl_lambda = 1
+                # cl_lambda = get_contrastive_lambda(epoch + 1, warmup_epochs = 0, max_epoch = 30)
+                # loss = action_loss + view_loss + subqloss + actqloss + cl_lambda * (sa_rgb_loss)
+                # # loss = loss / accum_step
+                # loss.backward()
+
+                # [TESTED] ablation study: try to remove `weighted constrative loss`
+                loss = action_loss + view_loss + subqloss + actqloss
                 loss.backward()
 
                 # if (i + 1) % accum_step == 0:
@@ -190,8 +195,9 @@ class Lab639Trainer():
 
                 ortho_sub_losses.append(subqloss.item())
                 ortho_act_losses.append(actqloss.item())
-
-                sa_rgb_losses.append(sa_rgb_loss.item())
+                
+                # [TESTED] since not used, just ignore it
+                # sa_rgb_losses.append(sa_rgb_loss.item())
 
             # Compute accuracy
             total_correct = torch.sum(torch.stack(act_acc)).item()
@@ -204,7 +210,7 @@ class Lab639Trainer():
             print(f"Epoch [{epoch + 1}/{self.config.num_epochs}], View Loss: {np.mean(view_losses):.4f}, View Accuracy: {view_acc_epoch * 100:.2f}%")
 
             # Compute sa_rgb_loss and sa_flow_loss
-            print(f"Epoch [{epoch + 1}/{self.config.num_epochs}], sa_rgb_loss: {np.mean(sa_rgb_losses):.4f}")
+            # print(f"Epoch [{epoch + 1}/{self.config.num_epochs}], sa_rgb_loss: {np.mean(sa_rgb_losses):.4f}")
 
             ortho_sub_loss = np.mean(ortho_sub_losses)
             ortho_act_loss = np.mean(ortho_act_losses)
@@ -216,7 +222,7 @@ class Lab639Trainer():
             writer.add_scalar('train/view accuracy', view_acc_epoch * 100, epoch)
             writer.add_scalar('train/ortho_sub loss', ortho_sub_loss, epoch)
             writer.add_scalar('train/ortho_act loss', ortho_act_loss, epoch)
-            writer.add_scalar('train/sa_rgb loss', np.mean(sa_rgb_losses), epoch)
+            # writer.add_scalar('train/sa_rgb loss', np.mean(sa_rgb_losses), epoch)
 
             # Validation
             if (epoch) % self.config.validation_interval == 0:
