@@ -19,6 +19,10 @@ def parse_args():
     parser.add_argument('--num_classes', type=int, default=10)
     parser.add_argument('--num_frames', type=int, default=16)
     parser.add_argument('--num_views', type=int)
+    # [TESTED] a setting to enable `camera-id label`
+    # default False
+    parser.add_argument('--baseline', action='store_true', 
+                    help='Set to True to use physical Camera ID for baseline experiment')
 
     # training & inference
     parser.add_argument('--mode', type=str, required=True, choices=['train', 'test'], help='Mode of operation: train or test')
@@ -80,6 +84,10 @@ class Lab639Config(object):
         self.num_workers = args.num_workers
         self.fusion_type = args.fusion_type
         self.motion_score = True if args.motion_score == 'True' else False
+
+        # [TESTED] a setting to enable `camera-id label`
+        self.baseline = args.baseline
+
 
         if args.mode == 'train':
             self.exp_name = args.exp_name

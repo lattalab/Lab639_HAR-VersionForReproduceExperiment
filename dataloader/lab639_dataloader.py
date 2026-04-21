@@ -115,6 +115,22 @@ class Lab639DataLoader(Dataset):
                 self.video_list.append([subject, action, repetition, setup, dict_action])
             if action not in self.actions:
                 self.actions.append(action)
+
+            # [MODIFY LOGIC HERE]
+            if self.config.baseline:
+                # useing --baseline to extract camera-ID
+                import re
+                match = re.search(r'C(\d{3})', video_id)
+                if match:
+                    camera = match.group(1) 
+                    
+            # If --baseline if False, then maintain original logic of `camera-to-region Lable`
+            # ==========================================
+
+            if camera not in self.views:
+                self.views.append(camera)
+
+
             if camera not in self.views:
                 self.views.append(camera)
             if f"{subject}_{action}_{repetition}_{setup}_{dict_action}" not in self.video_data_dict:
