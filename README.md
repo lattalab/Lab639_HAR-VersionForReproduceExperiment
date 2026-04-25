@@ -28,3 +28,9 @@ To implement `Same Action, Different View triplet margin loss`, it needs some mo
 - see branch `Remove_CL`
 
 Add document `#` for all related lines in code segments.
+
+## EXP 4: reproduce results for `remove camera-to-region label`
+- see branch `Remove_CameraID`
+
+Initially, the program reads camera labels from a CSV file (preallocated with camera-to-region labels).  
+However, the hidden `video_id` implicitly indicates which camera captured the video. $\rightarrow$ We can parse `video_id` to obtain the corresponding camera ID as the true camera label.
