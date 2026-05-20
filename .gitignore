@@ -1,5 +1,8 @@
 best_model.pth
 
+# testlog
+testlog/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

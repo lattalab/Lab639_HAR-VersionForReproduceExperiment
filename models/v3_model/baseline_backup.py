@@ -59,16 +59,28 @@ class R3DBackbone(nn.Module):
         model = model.cuda()
         self.hidden_dim = 256
         self.R3D_model = model
-        self.extractor = create_feature_extractor(model, return_nodes={"layer4": "features"}) #extract from earlier layer?
+        # self.extractor = create_feature_extractor(model, return_nodes={"layer4": "features"}) #extract from earlier layer?
+        self.features = nn.Sequential(
+            model.stem,
+            model.layer1,
+            model.layer2,
+            model.layer3,
+            model.layer4
+        )
+        self.features = self.features.cuda()
+
         self.avg_pool = nn.AvgPool3d(kernel_size=[1, 14, 14], stride=(1, 1, 1)) # reduce spatial downsize to 7x7
         self.name = 'r3d'
 
        
     def forward(self, inputs):
         inputs = inputs.permute(0, 2, 1, 3, 4)
-        features = self.extractor(inputs)
-        features = list(features.values())
-        features = features[0]
+
+        # features = self.extractor(inputs)
+        # features = list(features.values())
+        # features = features[0]
+        features = self.features(inputs)
+
         features = self.avg_pool(features) # b x t x f
         return features
         

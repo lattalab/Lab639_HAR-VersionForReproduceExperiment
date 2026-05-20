@@ -4,17 +4,26 @@ Human Action Recognition for Fisheye Dataset
 Why fork repo?
 - when I tried to modify any code, it may come arise differnet bugs and it hard to maintain.
 
+> **2026/05/20 Update:**  
+Initially, running the code resulted in an `AttributeError: 'GraphModule' object has no attribute 'eval_graph'`.  
+To resolve this issue, you can choose one of the following methods:
+> 1. **Modify the model directly:** (Used in the previous version) Update the model architecture in the codebase.
+> 2. **Patch the `torchvision` library:**  Replace the default `feature_extraction.py` in your conda environment with the provided custom script. 
+>   - Target path: `~/anaconda3/envs/lab639_har/lib/python3.11/site-packages/torchvision/models/feature_extraction.py`  
+> 
+> The accuracy will be silghtly diferent within a 1% margin.  
+
 # Ablation study
 
 | Setting (CRL) | Setting (Triplet) | Setting (WCL) | Concat | Max | Mean | Sum |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| ✘ | ✘ | ✘ | 0.8870 | 0.7611 | 0.9018 | 0.9037 |
-| **✔** | ✘ | ✘ | **0.9111** | 0.8463 | **0.9148** | **0.9093** |
-| **✔** | **✔** | ✘ | 0.8759 | 0.8870  | 0.8888 | 0.9185 |
-| **✔** | **✔** | ✘ | 0.8722 | 0.8796  | 0.8963  | 0.9018 |
-| **✔** | ✘ | **✔** | 0.9092 | 0.8555 | 0.9092 | 0.9148 |
+| **✘** | **✘** | **✘** | 0.8870 | 0.7611 | 0.9018 | 0.9037 |
+| **✔** | **✘** | **✘** | **0.9111** | 0.8463 | **0.9148** | **0.9093** |
+| **✔** | **✔ (SA-DV)** | **✘** | 0.8759 | 0.8870  | 0.8888 | 0.9185 |
+| **✔** | **✔ (Triplet)** | **✘** | 0.8722 | 0.8796  | 0.8963  | 0.9018 |
+| **✔** | **✘** | **✔** | 0.9092 | 0.8555 | 0.9092 | 0.9148 |
 
-> **Note:** Rows with identical settings represent different implementation details. 
+> **Note:** Rows with identical settings represent different implementation details.   
 
 ## EXP 1: reproduce results for `weighted contrastive loss`
 I have been fixed the bug - `AttributeError: 'GraphModule' object has no attribute 'eval_graph'`.
